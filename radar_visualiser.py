@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patheffects as pe
+from matplotlib.widgets import Slider  # Import the Slider widget
 
 # Shared memory to pass data from the Serial Thread to the GUI Thread
 latest_targets = []
@@ -95,36 +96,31 @@ class RadarLD2451:
         self.is_running = False
         self.ser.close()
 
-# --- Matplotlib GUI Setup (TIGHT DARK MODE) ---
+# --- Matplotlib GUI Setup ---
 plt.style.use('dark_background')
 
 fig = plt.figure(figsize=(14, 9))
 fig.canvas.manager.set_window_title('UAV mmWave Radar Scope')
 
 # 1. THE RADAR SCOPE
+# Shifted up slightly (bottom=0.28) to make room for the slider
 ax = fig.add_axes([0.0, 0.0, 1.0, 1.0], polar=True)
 ax.set_thetamin(-90)
 ax.set_thetamax(90)
 ax.set_theta_zero_location('N') 
-
-# UPDATE: Set max distance to 100 meters based on LD2451 specs
 ax.set_rlim(0, 100) 
 
 # Grid styling
-ax.grid(color="#7A7A7A", linestyle='--', linewidth=0.5)
+ax.grid(color='#444444', linestyle='--', linewidth=0.5)
 ax.tick_params(colors='lightgray')
-
-# FIX: Set labeled major grid lines every 30 degrees
 ax.set_thetagrids(np.arange(-90, 91, 30))
-
-# FIX: Add unlabelled minor grid lines every 10 degrees (Requires radians)
 ax.set_xticks(np.radians(np.arange(-90, 91, 10)), minor=True)
-ax.grid(which='minor', color="#797979", linestyle=':', linewidth=0.5)
+ax.grid(which='minor', color='#333333', linestyle=':', linewidth=0.5)
 
-# UPDATE: Smooth radial gradient layer scaled to 100m
+# Smooth radial gradient layer
 theta_grid, r_grid = np.meshgrid(np.linspace(-np.pi/2, np.pi/2, 40), np.linspace(0, 100, 40))
 val_grid = r_grid / 100.0 
-contour = ax.contourf(theta_grid, r_grid, -val_grid, 30, cmap=plt.cm.Greens_r, alpha=0.3)
+contour = ax.contourf(theta_grid, r_grid, val_grid, 30, cmap=plt.cm.Greens_r, alpha=0.3)
 
 # Scatter plot initialization
 scatter = ax.scatter([], [], c=[], cmap='coolwarm', s=200, edgecolors='white', linewidths=0.5, vmin=-20, vmax=20)
@@ -135,12 +131,35 @@ cbar = plt.colorbar(scatter, cax=cbar_ax, orientation='horizontal')
 cbar.set_label('Velocity (km/h)\n[Red=Approaching, Blue=Receding]', color='white', labelpad=10, fontsize=8)
 cbar.ax.yaxis.set_tick_params(color='white', labelcolor='white')
 
-# 3. THE 3-COLUMN DATA TABLE
+# 3. THE ZOOM SLIDER (NEW)
+# Positioned directly beneath the center of the radar
+ax_zoom = fig.add_axes([0.30, 0.18, 0.40, 0.02])
+zoom_slider = Slider(
+    ax=ax_zoom,
+    label='Scale (m) ',
+    valmin=10,
+    valmax=100,
+    valinit=100,
+    valstep=5,
+    color='#4CAF50' # A nice radar-green color for the slider bar
+)
+zoom_slider.label.set_color('white')
+zoom_slider.valtext.set_color('white')
+
+# Slider callback function to dynamically update the scope radius
+def update_zoom(val):
+    ax.set_rlim(0, val)
+    # The plot redraws automatically because of the FuncAnimation loop
+
+zoom_slider.on_changed(update_zoom)
+
+# 4. THE 3-COLUMN DATA TABLE
+# Shifted down slightly (y=0.08) to sit comfortably below the new slider
 col_texts = []
 x_positions = [0.30, 0.50, 0.70]
 
 for x_pos in x_positions:
-    t = fig.text(x_pos, 0.15, "", ha='center', va='top', color='lightgreen', fontsize=10, family='monospace', linespacing=1.5,)
+    t = fig.text(x_pos, 0.06, "", ha='center', va='bottom', color='lightgreen', fontsize=12, family='monospace', linespacing=1.5)
     col_texts.append(t)
 
 annotations = []
