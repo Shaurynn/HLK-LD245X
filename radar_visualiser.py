@@ -1,3 +1,15 @@
+'''UAV mmWave Radar Visualizer
+Description:    A real-time radar scope visualization for the HLK-LD245X mmWave radar  module, designed for UAV applications. 
+                This script reads radar data from a serial port, parses the target information, and displays it in a dynamic polar plot with velocity color-coding and a zoom slider.
+Features:       Real-time visualization, velocity color-coding, zoom functionality, and a data table for up to 3 detected targets.    
+Configuration:  Range - 100m | Speed - 1km/h | Delay - 0s | Direction - Approach & Away | Triggering - 1 | SNR - 0 | Baudrate - 115200
+Usage:          Before running this script, ensure the radar is connected to your computer and configured using the HLKRadarTool with the above values.
+                !!! DO NOT RE-INITIALIZE THE RADAR AFTER CONFIGURATION !!! 
+                The script will auto-detect the serial port, but you can also select it manually if multiple ports are found. 
+                The radar scope will display detected targets with their distance, angle, velocity, and signal strength.
+'''
+
+
 import serial
 import serial.tools.list_ports
 import math
