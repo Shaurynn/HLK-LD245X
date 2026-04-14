@@ -9,7 +9,6 @@ Usage:          Before running this script, ensure the radar is connected to you
                 The radar scope will display detected targets with their distance, angle, velocity, and signal strength.
 '''
 
-
 import serial
 import serial.tools.list_ports
 import math
